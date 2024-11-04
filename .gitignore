@@ -1,2 +1,3 @@
 # ignore anyhting stored in any folder called data throughout repo
 **/!data/**
+*.csv
