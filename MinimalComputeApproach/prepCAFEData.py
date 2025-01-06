@@ -6,8 +6,12 @@ from collections import Counter
 from typing import Literal
 from tqdm import tqdm
 from scipy.sparse import csr_matrix
+import re
 import os
 
+
+# NOTE: TODO: There is more room for improvement of the models if smaller categories from the training data are recategorized into bigger categories.
+# Items categorized into 2 groups should be put into the larger group instead of being put in Other
 
 # Weighted Average Sampling
 def recursive_sampler(total_size, current_list, train_to_test_ratio = 0.8,):
@@ -42,21 +46,9 @@ def recursive_sampler(total_size, current_list, train_to_test_ratio = 0.8,):
     # Call recursively
     return recursive_sampler(total_size=total_size, current_list=current_list, train_to_test_ratio=train_to_test_ratio)
 
-
-oversampling_ID = Literal['Duplicate Equal',
-                       'Duplicate Equal Large',
-                       'Duplicate Ratio',
-                       'SMOTE',
-                       'SMOTE Ratio',
-                       'None']
-
-def createData(oversampling: oversampling_ID, printouts = False):
-    '''
-    Reads excel file provided by CAFE team and crates separate testing and training data for later use.
-    Training data is subsidized with duplicate sampling.
-    '''
+def pullDataFromExcel(filepath, train_to_test_ratio, printouts = False):
     # Pull data from excel file
-    df = pd.read_excel('CAFECommentsHuman.xlsx')
+    df = pd.read_excel(filepath)
 
     # Remove nan rows
     df = df.dropna().reset_index()
@@ -64,9 +56,18 @@ def createData(oversampling: oversampling_ID, printouts = False):
     # Fix formatting in bin1 column
     df['BIN 1'] = df['BIN 1'].str.strip().str.lower()
 
+    # Reclassify some column values
+    for index, row in df.iterrows():
+        if re.search("modeling", row['BIN 1']):
+            df.loc[index, 'BIN 1'] = "technology"
+        if re.search("legal", row['BIN 1']):
+            df.loc[index, 'BIN 1'] = "legal"
+
     # Group all small bins into an "Other" bin
     bin_totals = df['BIN 1'].value_counts().reset_index()
-    # print(bin_totals)
+    if printouts:
+        print(bin_totals)
+
     small_bins = bin_totals.loc[(bin_totals['count'] < 50)]['BIN 1']
     df['BIN 1'] = np.where(df['BIN 1'].isin(small_bins), 'other', df['BIN 1'])
 
@@ -76,9 +77,6 @@ def createData(oversampling: oversampling_ID, printouts = False):
     # df = df.loc[df['BIN 1'].isin(bin_totals.index)].reset_index()[['Comments', 'BIN 1']]
 
     df = df.reset_index()[['Comments', 'BIN 1']]
-
-    # Get list of unique target names
-    target_names = np.unique(df['BIN 1']).tolist()
 
     # Create train and test datasets. Goal is to use about 80% of available data in each bin for training.
 
@@ -94,15 +92,16 @@ def createData(oversampling: oversampling_ID, printouts = False):
     for _, group in grouped_df:
         # Shuffle data
         group = group.sample(frac=1)
-        group['TestTrain'] = recursive_sampler(total_size=group.shape[0], current_list=[])
+        group['TestTrain'] = recursive_sampler(total_size=group.shape[0], current_list=[], train_to_test_ratio=train_to_test_ratio)
         sampled_groups.append(group)
 
     # NOTE: Data MUST be sorted or reset because comments are later vecotrized and
     # stored in an array who's index will be reset but must still match the bin column
     df = pd.concat(sampled_groups).reset_index()
+    # df = df[['Comments', 'BIN 1', 'TestTrain']]
+    return df
 
-    # Vectorize before splitting to ensure feature list is consistent across data
-    # NOTE: Vectorizing before oversampling via duplicating. I think this is good, but should maybe experiment with this
+def vectorizeData(df):
     vectorizer = TfidfVectorizer(
         sublinear_tf=True, max_df=0.5, min_df=5, stop_words="english"
     )
@@ -110,11 +109,19 @@ def createData(oversampling: oversampling_ID, printouts = False):
     X_data = X_data.toarray()
 
     feature_names = vectorizer.get_feature_names_out()
+    return X_data, feature_names
 
+oversampling_ID = Literal['Duplicate Equal',
+                       'Duplicate Equal Large',
+                       'Duplicate Ratio',
+                       'SMOTE',
+                       'SMOTE Ratio',
+                       'None']
+
+def oversampleTrainingData(oversampling: oversampling_ID, train_to_test_ratio, df, X_data):
     # Separate Training Data
     train_df = df.loc[df['TestTrain'] == 'Train'][['Comments', 'BIN 1']]
     # print(train_df['BIN 1'].value_counts())
-
     # Oversample training data
     if oversampling == 'Duplicate Equal':
         train_bin_max = train_df['BIN 1'].value_counts().max()
@@ -127,7 +134,7 @@ def createData(oversampling: oversampling_ID, printouts = False):
         sampled_groups = []
         for _, group in grouped_df:
             group = group.sample(frac=5)
-            group['TestTrain'] = recursive_sampler(total_size=group.shape[0], current_list=[])
+            group['TestTrain'] = recursive_sampler(total_size=group.shape[0], current_list=[], train_to_test_ratio=train_to_test_ratio)
             sampled_groups.append(group)
         train_df = train_df.groupby(['BIN 1']).sample(n=train_bin_max, replace=True).reset_index()
     elif oversampling == 'None':
@@ -168,6 +175,23 @@ def createData(oversampling: oversampling_ID, printouts = False):
         X_train, train_targets = smote_data.fit_resample(X_train, train_targets)
         # counter = Counter(y)
         # print(counter)
+    return X_train, train_targets
+
+def createData(filepath, oversampling: oversampling_ID, train_to_test_ratio, printouts = False):
+    '''
+    Reads excel file provided by CAFE team and crates separate testing and training data for later use.
+    Training data is subsidized with duplicate sampling.
+    '''
+    df = pullDataFromExcel(filepath, train_to_test_ratio, printouts)
+
+    # Vectorize before splitting to ensure feature list is consistent across data
+    # NOTE: Vectorizing before oversampling via duplicating. I think this is good, but should maybe experiment with this
+    X_data, feature_names = vectorizeData(df)
+
+    X_train, train_targets = oversampleTrainingData(oversampling, train_to_test_ratio, df, X_data)
+
+    # Get list of unique target names
+    target_names = np.unique(df['BIN 1']).tolist()
 
     # Separate Testing Data
     test_df = df.loc[df['TestTrain'] == 'Test'][['Comments', 'BIN 1']]
@@ -192,11 +216,10 @@ def createData(oversampling: oversampling_ID, printouts = False):
     col = np.array(cols)
     data = np.array(data)
     X_test = csr_matrix((data, (row, col)), shape=(i+1, len(data_in_row)))
-    # print(X_test)
 
 
 
     return X_train, X_test, train_targets, test_targets, feature_names, target_names
 
 if __name__ == "__main__":
-    createData(oversampling='SMOTE', printouts=True)
+    createData(filepath='../CAFECommentsHuman.xlsx', oversampling='SMOTE', train_to_test_ratio=0.8, printouts=True)

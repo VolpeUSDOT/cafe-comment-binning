@@ -11,6 +11,7 @@ from modelBenchmark import benchmark
 
 
 def createConfusionMatrix(clf, y_test, pred):
+    plt.rcParams.update({'font.size': 20})
     fig, ax = plt.subplots(figsize=(10, 5))
     ConfusionMatrixDisplay.from_predictions(y_test, pred, ax=ax)
     ax.xaxis.set_ticklabels(target_names)
@@ -26,16 +27,15 @@ def ridgeClassifierModel(X_train, y_train, X_test, y_test):
     pred = clf.predict(X_test)
     createConfusionMatrix(clf, y_test, pred)
 
+filepath = '../CAFECommentsHuman.xlsx'
 
-# X_train, X_test, y_train, y_test, feature_names, target_names = createData(oversampling=True)
-# ridgeClassifierModel(X_train, y_train, X_test, y_test)
-
-# X_train, X_test, y_train, y_test, feature_names, target_names = createData(oversampling=False)
-# ridgeClassifierModel(X_train, y_train, X_test, y_test)
-# plt.show()
-
-# Pull, format, and vectorize data
-# X_train, X_test, y_train, y_test, feature_names, target_names = createData(oversampling=oversampling)
+X_train, X_test, y_train, y_test, feature_names, target_names = createData(filepath, oversampling='SMOTE', train_to_test_ratio=0.8, printouts=False)
+ridgeClassifierModel(X_train, y_train, X_test, y_test)
+X_train, X_test, y_train, y_test, feature_names, target_names = createData(filepath, oversampling='None', train_to_test_ratio=0.8, printouts=False)
+ridgeClassifierModel(X_train, y_train, X_test, y_test)
+plt.show()
+ # Pull, format, and vectorize data
+ # X_train, X_test, y_train, y_test, feature_names, target_names = createData(oversampling=oversampling)
 
 
 
@@ -62,7 +62,7 @@ for clf, name in (
     print(name)
     results = []
     for _ in range(20):
-        X_train, X_test, y_train, y_test, feature_names, target_names = createData(oversampling='SMOTE')
+        X_train, X_test, y_train, y_test, feature_names, target_names = createData(filepath, oversampling='SMOTE', train_to_test_ratio=0.8, printouts=True)
         results.append(benchmark(X_train, y_train, X_test, y_test, clf, name))
     df = pd.DataFrame(results, columns=['name', 'accuracy', 'train_time', 'test_time'])
     print(f"Accuracy:    {df['accuracy'].mean()}")
