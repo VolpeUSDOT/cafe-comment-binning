@@ -7,7 +7,6 @@ from typing import Literal
 from tqdm import tqdm
 from scipy.sparse import csr_matrix
 import re
-import os
 
 
 # NOTE: TODO: There is more room for improvement of the models if smaller categories from the training data are recategorized into bigger categories.

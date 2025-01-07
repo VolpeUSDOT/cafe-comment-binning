@@ -1,0 +1,8 @@
+numpy
+pandas
+scipy
+tqdm
+scikit-learn
+imbalanced-learn
+matplotlib
+semantic-text-splitter
