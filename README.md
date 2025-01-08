@@ -18,7 +18,7 @@
 ### ROADII Use Case - Categorizing Public Comments
 
 * **Title:** Categorizing Public Comments for CAFE Rulemakings
-* **Purpose and goals of the project:** Explore diferent AI approaches to comment categorization to gain an understanding of language processing tools and to imrove the efficiency of the public comment response project. This is not intended to remove humans from the public comment response process, it is only intended to speed up the time in which comments are responded to.
+* **Purpose and goals of the project:** Explore diferent AI approaches to comment categorization to gain an understanding of language processing tools and to improve the efficiency of the public comment response project. This is not intended to remove humans from the public comment response process, it is only intended to speed up the time in which comments are responded to.
 * **Purpose of the source code and how it relates to the overall goals of the project:** This code represents a prototype implementation of processing public comments from plain text to binned and categorized comments. This is not a final version and does not represent the current method of processing public comments.
 * **Length of the project:** This use case is currently in the exploratory phase.
 
