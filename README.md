@@ -26,7 +26,7 @@
 
 This repositories dependencies are listed in the requirements.txt file. Install all dependencies by running: ```pip install -r /path/to/requirements.txt```
 
-## Usage
+### Usage
 
 ## LLM Approach
 The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. 
@@ -57,7 +57,7 @@ Basic functionality testing is built into each file and can be run by simply run
 
 ### Execution
 
-The steps to running the main pipeline are as follows:
+The steps to running the main machine learning pipeline are as follows:
 
 1. Navigate to main.py
 2. Update file location of training data and text file to be chunked and categorized
@@ -96,7 +96,7 @@ This project is licensed under the Creative Commons 1.0 Universal (CC0 1.0) Lice
 
 ## Contributions
 
-Please read [CONTRIBUTING.md](https://github.com/ITSJPO-TRIMS/R25-IncidentDetection/blob/main/Contributing.MD) for details on our Code of Conduct, the process for submitting pull requests to us, and how contributions will be released.
+Please read [CONTRIBUTING.md] for details on our Code of Conduct, the process for submitting pull requests to us, and how contributions will be released.
 
 ## Contact Information
 
