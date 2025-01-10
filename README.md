@@ -26,10 +26,9 @@
 
 This repositories dependencies are listed in the requirements.txt file. Install all dependencies by running: ```pip install -r /path/to/requirements.txt```
 
-### Usage
 
 ## LLM Approach
-The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. 
+The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/main/CAFE_LLM_spaCy_LM_Studio). 
 
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
