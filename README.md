@@ -28,7 +28,9 @@ This repositories dependencies are listed in the requirements.txt file. Install 
 
 
 ## LLM Approach
-The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/LM_Studio/LM_Studio). Most of the code for this approach is located in this [file](https://github.com/ROADII-Lab/CAFE-public-comments/blob/LM_Studio/LM_Studio/tryingLM_Studio.py).
+The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/LM_Studio/LM_Studio). Most of the code for this approach is located in this [file](https://github.com/ROADII-Lab/CAFE-public-comments/blob/LM_Studio/LM_Studio/tryingLM_Studio.py). This file just needs to be run and it will currently read an Excel sheet for comments in a particular column. It will then label those comments based on one of the labels of {legal, compliance, economics, technology, or other/unknown}. An example of the code that can be modified to run the program with various parameters is shown below.
+
+![alt text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20102216.png)
 
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
@@ -54,7 +56,7 @@ An overview of the steps are as follows:
 
 Basic functionality testing is built into each file and can be run by simply running the file. Testing for edge cases and comparing results to expected values is currently left to human-based quality control.
 
-### Execution
+### Execution with Machine Learning Approach
 
 The steps to running the main machine learning pipeline are as follows:
 
