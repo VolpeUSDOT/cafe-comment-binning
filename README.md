@@ -38,21 +38,21 @@ The team utilized LM Studio as with the local server and API approach to attempt
 ![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Dev_ss.png)
 
 
-
+***
 
 2. Make sure model is loaded and click Start Server (ctrl + R) button.
    
 ![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20103235.png)
 
 
-
+***
 
 3. As long as the model you identify in the code is downloaded, LM Studio will find the model and load it, if it's not already loaded. For example, it will use the Calme Legal model when instructed and switch to the Gemma model, when instructed, as shown below.
 
 ![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/code%20snippet%202.png)
 
 
-
+***
 
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
