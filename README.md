@@ -34,7 +34,10 @@ The team utilized LM Studio as with the local server and API approach to attempt
 
 ## Running LM Studio
 1. Click on developer tab.
-![alt_text]()
+![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Dev_ss.png)
+
+2. Make sure model is loaded and click Start Server (ctrl + R) button.
+3. ![alt_text]()
 
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
