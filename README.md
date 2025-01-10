@@ -55,12 +55,13 @@ The team utilized LM Studio as with the local server and API approach to attempt
 ***
 
 # Models Tested
-1.	llama-3.2-1b-instruct-q8_0.gguf
-2.	llava-hf/llava-1.5-7b-hf
-3.	simmo/legal-llama-3
-4.	meta-llama/Llama-3.2-1B
-5.	Granite 3.1
-6.	Calme 2.3 LegalKit 8B
+1. gemma-2-27b-it
+2. Calme 2.3 LegalKit 8B
+3.	llama-3.2-1b-instruct-q8_0.gguf
+4.	llava-hf/llava-1.5-7b-hf
+5.	simmo/legal-llama-3
+6.	meta-llama/Llama-3.2-1B
+7.	Granite 3.1
 
 Parameters varied between 1 and 27 billion for the models that were used. 
 
