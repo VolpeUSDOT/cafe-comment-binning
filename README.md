@@ -28,9 +28,28 @@ This repositories dependencies are listed in the requirements.txt file. Install 
 
 ## Usage
 
-### Building
+## LLM Approach
+The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. 
 
-The [Code](https://github.com/ITSJPO-TRIMS/R25-IncidentDetection/tree/main/Code) folder contains the code and installation instructions of the ROADII-Lab exploration of the traffic incident detection use case. It will be populated with functions, model code, training parameters, and eductional materials to help potential users or stakeholders with the development process for the deployment of their own traffic incident detection system.
+# Models Tested
+1.	llama-3.2-1b-instruct-q8_0.gguf
+2.	llava-hf/llava-1.5-7b-hf
+3.	simmo/legal-llama-3
+4.	meta-llama/Llama-3.2-1B
+5.	Granite 3.1
+6.	Calme 2.3 LegalKit 8B
+
+Parameters varied between 1 and 27 billion for the models that were used. 
+
+# Process
+The LLM approach utilized a tiered prompting approach due to inconsistencies with other approaches. 
+An overview of the steps are as follows:
+1. Calme LegalKit was first prompted with the comment to determine if it was a legal-based comment or not.
+2. If it returns something other than true or false, the model is reprompted to provide either a true or false response
+3. If it is a legal comment, it is labeled legal and the program moves to the next comment.
+4. If not a legal comment, the program then prompts the Gemma 2 model for the next category.
+5. It follows this approach until either a category is found or the model is unable to determine a category and determines it as unknown.
+
 
 ### Testing
 
