@@ -32,6 +32,10 @@ The team utilized LM Studio as with the local server and API approach to attempt
 
 ![alt text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20102216.png)
 
+## Running LM Studio
+1. Click on developer tab.
+![alt_text]()
+
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
 2.	llava-hf/llava-1.5-7b-hf
