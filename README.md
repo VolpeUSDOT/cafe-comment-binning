@@ -28,7 +28,7 @@ This repositories dependencies are listed in the requirements.txt file. Install 
 
 
 ## LLM Approach
-The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/LM_Studio/LM_Studio). 
+The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/LM_Studio/LM_Studio). Most of the code for this approach is located in this [file](https://github.com/ROADII-Lab/CAFE-public-comments/blob/LM_Studio/LM_Studio/tryingLM_Studio.py).
 
 # Models Tested
 1.	llama-3.2-1b-instruct-q8_0.gguf
