@@ -24,26 +24,28 @@
 
 ## Prerequisites
 
-This repositories dependencies are listed in the requirements.txt file. Install all dependencies by running: ```pip install -r /path/to/requirements.txt```
-
+This repositories dependencies are listed in the requirements.txt file. Install all dependencies by running:
+```pip install -r /path/to/requirements.txt```
 
 ## LLM Approach
+
+***
+
 The team utilized LM Studio as with the local server and API approach to attempt to improve upon the traditional machine learning approaches to text recognition and categorization. The files for this approach can be found within the this [folder](https://github.com/ROADII-Lab/CAFE-public-comments/tree/LM_Studio/LM_Studio). Most of the code for this approach is located in this [file](https://github.com/ROADII-Lab/CAFE-public-comments/blob/LM_Studio/LM_Studio/tryingLM_Studio.py). This file just needs to be run and it will currently read an Excel sheet for comments in a particular column. It will then label those comments based on one of the labels of {legal, compliance, economics, technology, or other/unknown}. An example of the code that can be modified to run the program with various parameters is shown below.
 
 ![alt text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20102216.png)
 
-## Running LM Studio
-1. Click on developer tab.
-   
-![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Dev_ss.png)
+### Running LM Studio
 
+1. Click on developer tab.
+
+![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Dev_ss.png)
 
 ***
 
 2. Make sure model is loaded and click Start Server (ctrl + R) button.
-   
-![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20103235.png)
 
+![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/Screenshot%202025-01-10%20103235.png)
 
 ***
 
@@ -51,43 +53,72 @@ The team utilized LM Studio as with the local server and API approach to attempt
 
 ![alt_text](https://github.com/ROADII-Lab/CAFE-public-comments/blob/main/Images/code%20snippet%202.png)
 
-
 ***
 
-# Models Tested
+### Models Tested
+
 1. gemma-2-27b-it
 2. Calme 2.3 LegalKit 8B
-3.	llama-3.2-1b-instruct-q8_0.gguf
-4.	llava-hf/llava-1.5-7b-hf
-5.	simmo/legal-llama-3
-6.	meta-llama/Llama-3.2-1B
-7.	Granite 3.1
+3. llama-3.2-1b-instruct-q8_0.gguf
+4. llava-hf/llava-1.5-7b-hf
+5. simmo/legal-llama-3
+6. meta-llama/Llama-3.2-1B
+7. Granite 3.1
 
-Parameters varied between 1 and 27 billion for the models that were used. 
+Parameters varied between 1 and 27 billion for the models that were used.
 
-# Process
-The LLM approach utilized a tiered prompting approach due to inconsistencies with other approaches. 
+### Process
+
+The LLM approach utilized a tiered prompting approach due to inconsistencies with other approaches.
 An overview of the steps are as follows:
+
 1. Calme LegalKit was first prompted with the comment to determine if it was a legal-based comment or not.
 2. If it returns something other than true or false, the model is reprompted to provide either a true or false response
 3. If it is a legal comment, it is labeled legal and the program moves to the next comment.
 4. If not a legal comment, the program then prompts the Gemma 2 model for the next category.
 5. It follows this approach until either a category is found or the model is unable to determine a category and determines it as unknown.
 
+## Traditional Neural Network(NN) Approach
 
-### Testing
+***
 
-Basic functionality testing is built into each file and can be run by simply running the file. Testing for edge cases and comparing results to expected values is currently left to human-based quality control.
+The team utilized SciKitLearn to locally run a large selection of traditional machine learning algorithms. The files for this approach can be found within the [this folder](https://github.com/ROADII-Lab/CAFE-public-comments/MinimalComputeApproach). Eight differrent models were tested with a large selection of different dataset cleaning and oversampling techniques to determine the best approach for the final use case. The code used to test differnt approaches can be found in [this file](https://github.com/ROADII-Lab/CAFE-public-comments/MinimalComputeApproach/minimalcompute.py). The best performing approach was found to be Log Loss SGD, and the selection can be found at the top of the main.py file.
+
+### Models Tested
+
+1. Logistic Regression
+2. Ridge Classifier
+3. K Nearest Neighbors (kNN)
+4. Random Forest Classifier
+5. Linear Support Vector Machine (SVC)
+6. Log Loss Stochastic Gradient Descent (SGD)
+7. Nearest Centroid
+8. Complement Naive Bayes
+
+### Process
+
+1. training data is read, some items are reclassified to reduce similarities between categories.
+2. The selected oversampling technique modifies the training data to account for the size and category imbalance in the data set.
+3. Text to be categorized is loaded and chunked using [semantic-text-splitter](https://pypi.org/project/semantic-text-splitter/).
+4. Chunked text and training data are combined and vectorized/tokenized.
+5. Model is trained on training data.
+6. Text chunks are categorized by model.
+7. Model categorization is compared to keyword classification and updated if necessary.
+8. Sequential chunks with matching categorizations are combined to reduce the number of output chunks.
 
 ### Execution with Machine Learning Approach
 
 The steps to running the main machine learning pipeline are as follows:
 
-1. Navigate to main.py
+1. Navigate to [main.py](https://github.com/ROADII-Lab/CAFE-public-comments/main.py)
 2. Update file location of training data and text file to be chunked and categorized
-3. Fill in keywordDict with any keywords you woould like to use for classification
-4. Select True or False for human intervention when keyword and NN don't match
-5. run main.py
+3. Fill in keywordDict with any keywords you would like to use for classification
+4. Select True or False for human intervention when keyword and neural network don't match
+5. run [main.py](https://github.com/ROADII-Lab/CAFE-public-comments/main.py)
+
+## Testing
+
+Basic functionality testing is built into each file and can be run by simply running the file. Testing for edge cases and comparing results to expected values is currently left to human-based quality control.
 
 ## Additional Notes
 
