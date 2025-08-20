@@ -6,3 +6,7 @@ scikit-learn
 imbalanced-learn
 matplotlib
 semantic-text-splitter
+openpyxl
+python-docx
+docx2python
+striprtf
