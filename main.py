@@ -1,8 +1,14 @@
+import os
+from pathlib import Path
 from MinimalComputeApproach.prepCAFEData import *
 from sklearn.linear_model import SGDClassifier
 from KeywordClassify import keywordClassify
 from TextSplitter.TextSplitter import *
 import pandas as pd
+from os import listdir
+from os.path import isfile, join
+import glob
+from FileTextRetriever import get_text
 
 def trainModelAllData(filepath, chunks):
     df = pullDataFromExcel(filepath, train_to_test_ratio=1.00, printouts=False)
@@ -58,7 +64,7 @@ def concatenateComments(chunk_list, predictions):
             start_index = i
             current_bin = pred
 
-    # Add the last row
+    # Add the last row 
     concat_comment_list.append({'Comment': " ".join(chunk_list[start_index:]), 'Bin': current_bin})
     concat_comment_df = pd.DataFrame(concat_comment_list)
     return (concat_comment_df)
@@ -107,26 +113,58 @@ def combinePredictions(keywordClassification, nnPrediction, chunk_list, requireI
 
     return combinedPredictions
 
+def getUniqueFileOutput(outputPath, filePath):
+    '''
+
+    '''
+    suffix = 0
+    output_file = f'{outputPath}/binned_{Path(filePath).stem}_{suffix}.xlsx'
+
+    while os.path.exists(output_file):
+        output_file = f'{outputPath}/binned_{Path(filePath).stem}_{suffix}.xlsx'
+        suffix += 1
+
+    return output_file
 
 if __name__ == "__main__":
 
-    filepath = './TextSplitter/TestComments/NissanResponseHandModified.txt'
-    with open(filepath, 'r') as file:
-        data = file.read()
+    # USER: Set directory containing files to bin here.
+    dataPath = './TextSplitter/TestComments/'
 
-    chunk_list = splitDocument(data, min_characters=200, max_characters=350)
-    filepath = '../CAFECommentsHuman.xlsx'
-    clf, tokenizedChunks = trainModelAllData(filepath, chunk_list)
+    fileNames = glob.glob(f"{dataPath}*.*") # Currently only reading text files using "*txt" suffix
 
-    pred = clf.predict(tokenizedChunks)
+    outputPath = './BinnedComments' # Output file location
+    if not os.path.exists(outputPath):
+        os.makedirs(outputPath)
 
-    keywordDict = {'legal': ['regulation', 'policy']}
+    for (filePath) in fileNames:
+        _, file_extension = os.path.splitext(filePath)
+        if file_extension == '.pdf': continue # pdf parsing currently unimplemented.
 
-    keywordClassification = keywordClassify(keywordDict, chunk_list)
+        data = get_text(filePath)
 
-    combinedPredictions = combinePredictions(keywordClassification, pred, chunk_list, requireIntervention=False)
+        # Chunk file into comments... Issue open to refactor this.
+        chunk_list = splitDocument(data, min_characters=200, max_characters=350)
+                
+        # Path to training data... may need to update with new "graded" comments for next rule
+        trainingDataFilePath = 'C:/Users/Vincent.Livant/source/repos/CommentBinning/CommentBinning/CAFECommentsHuman.xlsx'
 
-    concat_comment_df = concatenateComments(chunk_list=chunk_list, predictions=combinedPredictions)
+        # Format for SGD
+        clf, tokenizedChunks = trainModelAllData(trainingDataFilePath, chunk_list)
 
-    # print(concat_comment_df)
-    concat_comment_df.to_excel('Binned Comments Out.xlsx')
+        # Opaque box... spooky
+        pred = clf.predict(tokenizedChunks)
+        keywordDict = {'legal': ['regulation', 'policy']} # Need input from folks here...
+        keywordClassification = keywordClassify(keywordDict, chunk_list)
+
+        # Combine + IF intervention=true -> manually adjust 
+        combinedPredictions = combinePredictions(keywordClassification, pred, chunk_list, requireIntervention=False)
+
+        concat_comment_df = concatenateComments(chunk_list=chunk_list, predictions=combinedPredictions)
+
+        # Handle duplicates by appending number suffix to output file name
+        file_exists = os.path.exists(f'{outputPath}/binned_{Path(filePath).stem}.xlsx')
+        output_file = f'{outputPath}/binned_{Path(filePath).stem}.xlsx' if not file_exists else getUniqueFileOutput(outputPath, filePath)
+        
+        # Output file
+        concat_comment_df.to_excel(output_file)
