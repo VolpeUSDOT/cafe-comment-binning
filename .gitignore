@@ -2,11 +2,26 @@
 **/!data/**
 *.csv
 **/__pycache__
-CAFE_Comment_Pulling_Tool/src/_scalars.R
-CAFE_Comment_Pulling_Tool/src/.Rhistory
-CAFE_Comment_Pulling_Tool/src/.Rhistory
+*.pyc
 
+# VS Code files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.vshistory/
+.history/
 
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!?*.[Cc]ache/
+
+# ignore generated outputs
+CAFE_Comment_Pulling_Tool/src/.Rhistory
 CAFE_Comment_Pulling_Tool/attachments/*
 CAFE_Comment_Pulling_Tool/index/*
 CAFE_Comment_Pulling_Tool/!attachments/.gitkeep
