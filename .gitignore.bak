@@ -1,0 +1,13 @@
+# ignore anyhting stored in any folder called data throughout repo
+**/!data/**
+*.csv
+**/__pycache__
+CAFE_Comment_Pulling_Tool/src/_scalars.R
+CAFE_Comment_Pulling_Tool/src/.Rhistory
+CAFE_Comment_Pulling_Tool/src/.Rhistory
+
+
+CAFE_Comment_Pulling_Tool/attachments/*
+CAFE_Comment_Pulling_Tool/index/*
+CAFE_Comment_Pulling_Tool/!attachments/.gitkeep
+CAFE_Comment_Pulling_Tool/!index/.gitkeep

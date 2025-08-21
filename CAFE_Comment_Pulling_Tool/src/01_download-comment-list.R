@@ -46,7 +46,7 @@ while (nextFlag) {
     
     # If page has fewer than 250 records (specified "&page[size]=250" above), then end
     if (pageRows < 250) {
-      next_flag <- FALSE
+      nextFlag <- FALSE
     }
     
     i <- i + 1
