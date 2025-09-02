@@ -5,8 +5,6 @@ from sklearn.linear_model import SGDClassifier
 from KeywordClassify import keywordClassify
 from TextSplitter.TextSplitter import *
 import pandas as pd
-from os import listdir
-from os.path import isfile, join
 import glob
 from FileTextRetriever import get_text
 

@@ -4,9 +4,6 @@
 **/__pycache__
 *.pyc
 
-# VS Code files
-
-
 # Visual Studio cache files
 # files ending in .cache can be ignored
 *.[Cc]ache
