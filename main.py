@@ -127,7 +127,7 @@ def getUniqueFileOutput(outputPath, filePath):
 if __name__ == "__main__":
 
     # USER: Set directory containing files to bin here.
-    dataPath = './TextSplitter/TestComments/'
+    dataPath = './Sample_Comments/'
 
     fileNames = glob.glob(f"{dataPath}*.*") # Currently only reading text files using "*txt" suffix
 
