@@ -1,12 +1,13 @@
 import os
+import pandas as pd
+import glob
 from pathlib import Path
 from MinimalComputeApproach.prepCAFEData import *
 from sklearn.linear_model import SGDClassifier
+
 from KeywordClassify import keywordClassify
 from TextSplitter.TextSplitter import *
-import pandas as pd
-import glob
-from FileTextRetriever import get_text
+from File_Parsing.FileTextRetriever import get_text
 
 def trainModelAllData(filepath, chunks):
     df = pullDataFromExcel(filepath, train_to_test_ratio=1.00, printouts=False)

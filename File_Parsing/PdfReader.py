@@ -1,10 +1,10 @@
 import os
 import shutil
 import pytesseract
-from pdf2image import convert_from_path
-from PIL import Image
 import fitz
-from ImageParser import get_img_text
+
+from pdf2image import convert_from_path
+from File_Parsing.ImageParser import get_img_text
 
 def get_pdf(file_path):
     '''
