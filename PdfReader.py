@@ -4,6 +4,7 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image
 import fitz
+from ImageParser import get_img_text
 
 def get_pdf(file_path):
     '''
@@ -38,18 +39,9 @@ def get_pdf(file_path):
         image_file_names.append(filename)
 
     # Extract text from saved images.
-    for file_name in image_file_names:
-        img = Image.open(file_name)
-        
-        page_text = str(((pytesseract.image_to_string(img))))
-        
-        # Remove end-of-line hyphens
-        page_text = page_text.replace("-\n", "")
-        
-        doc_text += page_text
+    for file_name in image_file_names:        
+        doc_text += get_img_text(file_name)
     
-        img.close()
-
     # delete temp files and directory
     shutil.rmtree(temp_jpeg_dir)
 
