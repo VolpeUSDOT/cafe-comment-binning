@@ -10,3 +10,6 @@ openpyxl
 python-docx
 docx2python
 striprtf
+PyMuPDF
+pdf2image
+pytesseract

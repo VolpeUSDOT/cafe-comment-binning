@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     for (filePath) in fileNames:
         _, file_extension = os.path.splitext(filePath)
-        if file_extension == '.pdf': continue # pdf parsing currently unimplemented.
+        #if file_extension == '.pdf': continue # pdf parsing currently unimplemented.
 
         data = get_text(filePath)
 

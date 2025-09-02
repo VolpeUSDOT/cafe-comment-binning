@@ -5,14 +5,7 @@
 *.pyc
 
 # VS Code files
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-.vshistory/
-.history/
+
 
 # Visual Studio cache files
 # files ending in .cache can be ignored
