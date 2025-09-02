@@ -147,7 +147,10 @@ Data for this project was supplied by the CAFE public comments team. All data is
 
 ## License
 
-This project is licensed under the Creative Commons 1.0 Universal (CC0 1.0) License - see the [License.MD](https://github.com/usdot-jpo-codehub/codehub-readme-template/blob/master/LICENSE) for more details.
+This project is dual-licensed under the Apache v2.0 License and Creative Commons 1.0 Universal (CC0 1.0) License. You can choose between one of them if you use this work.
+
+SPDX-License-Identifier: Apache-2.0 OR CC0-1.0
+
 
 ## Contributions
 
