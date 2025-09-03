@@ -13,3 +13,4 @@ striprtf
 PyMuPDF
 pdf2image
 pytesseract
+pdfplumber
