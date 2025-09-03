@@ -16,3 +16,4 @@ CAFE_Comment_Pulling_Tool/attachments/*
 CAFE_Comment_Pulling_Tool/index/*
 CAFE_Comment_Pulling_Tool/!attachments/.gitkeep
 CAFE_Comment_Pulling_Tool/!index/.gitkeep
+BinnedComments/*
