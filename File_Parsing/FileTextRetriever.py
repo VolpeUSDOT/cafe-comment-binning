@@ -3,7 +3,7 @@ import docx
 
 from File_Parsing.ImageParser import get_img_text
 from striprtf.striprtf import rtf_to_text
-from File_Parsing.PdfReader import get_pdf
+from File_Parsing.PdfReader import get_pdf_text
 
 def get_text(file_path):
     _, file_extension = os.path.splitext(file_path)
@@ -15,11 +15,12 @@ def get_text(file_path):
         case '.bmp' | '.jfif' | '.jpg' | '.jpeg' | '.png' | '.tif' |'.tiff':
             return get_img_text(file_path)
         case '.pdf':
-            return get_pdf(file_path)
+            body, footers = get_pdf_text(file_path)
+            return body
         case '.txt':
             with open(file_path, 'r') as file:
                 return file.read()
-    return 
+    return None
 
 def get_docx(file_path):
     return '\n'.join([p.text for p in docx.Document(file_path).paragraphs])
