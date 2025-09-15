@@ -29,7 +29,9 @@ def get_body_char_height(page):
     char_heights = []
     line_heights = []
     prev_char_y = 1000
+    left_rule = 1000
     for char in page.chars:
+        left_rule = min(left_rule, char['x0'])
         # Skip whitespace and bolds to exclude heading text.
         isWhitespace = char['text'] == ' '
         isBold = re.search("bold", char['fontname'].lower()) != None
@@ -38,12 +40,12 @@ def get_body_char_height(page):
         char_heights.append(char['height'])
         if char['y0'] < prev_char_y:
             line_heights.append(prev_char_y - char['y0'])
-            prev_char_y = char['y0']
+        prev_char_y = char['y0']
 
     char_height_mode = get_greater_mode(char_heights)
     line_height_mode = get_greater_mode(line_heights)
 
-    return char_height_mode, line_height_mode
+    return char_height_mode, line_height_mode, left_rule
 
 def get_footers_bounds(page, body_char_height):
     first_char = page.chars[0]
@@ -98,6 +100,7 @@ def get_pdf_text(file_path, try_ocr = True):
 
     remarks: If OCR is used all text will be returned in 'body'.
     '''
+    paragraphs = [ ]
     body = ""
     footers = ""
     with pdfplumber.open(file_path) as pdf:
@@ -107,23 +110,47 @@ def get_pdf_text(file_path, try_ocr = True):
             return body, footers
         
         # Get body-text line height
-        body_char_mode, line_height_mode = get_body_char_height(pdf.pages[0])
+        body_char_mode, line_height_mode, left_rule = get_body_char_height(pdf.pages[0])
 
         for page in pdf.pages:
             footer_bbox = get_footers_bounds(page, body_char_mode)
             if footer_bbox != None:
                 footer_chars = page.crop(footer_bbox).chars
-                text = "".join(f"{char['text']}" for char in footer_chars)
-                footers += text + '\n'
+                footers += "".join(f"{char['text']}" for char in footer_chars) + '\n'
 
                 body_chars = page.outside_bbox(footer_bbox).chars
-                # Filter chars by size to remove artifacts (and superscripts)
-                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode]}" for char in body_chars)
-                body += text + '\n'
             else:
-                text = "".join(f"{char['text']}" for char in page.chars)
-                body += text
+                body_chars = page.chars
 
+            prev_char = body_chars[0]
+            start_index = 0
+            para_indexes = [ ]
+            # Split strings by paragraph
+            for i, char in enumerate(body_chars):
+                if prev_char['y0'] - char['y0'] > line_height_mode:
+                    para_indexes.append((start_index, i - 1))
+                    start_index = i
+                prev_char = char
+
+            # Filter chars by size to remove artifacts (and superscripts)
+            for i, (start, end) in enumerate(para_indexes):
+                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode]}" for char in body_chars[start:end]).strip()
+                
+                # Remove page number
+                end = 0
+                regex = re.compile("^\d+ ")
+                if regex.match("".join(text[0:4])):
+                    end = [m.end(0) for m in re.finditer(regex, text[0:4])][0]
+                    text = text[end:]
+                
+                if len(text) > 0:
+                    # Join paragraphs continued between pages
+                    is_left_rule_aligned = abs(body_chars[end]['x0'] - left_rule) < 0.1 # Allow .1 tolerance
+                    if (len(paragraphs) > 0) & (i == 0) & is_left_rule_aligned:
+                        paragraphs[-1] = paragraphs[-1] + ' ' + text
+                    else:
+                        paragraphs.append(text)
+                body += text + ' '
     return body, footers
 
 def get_pdf_text_ocr(file_path):
