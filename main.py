@@ -143,8 +143,10 @@ if __name__ == "__main__":
         data = get_text(filePath)
 
         # Chunk file into comments... Issue open to refactor this.
-        chunk_list = splitDocument(data, min_characters=200, max_characters=350)
-                
+        #chunk_list = splitDocument(data, min_characters=200, max_characters=350)
+        chunk_list = tikToken_split(data, 250)
+        #chunk_list = hugging_split(data)
+
         # Path to training data... may need to update with new "graded" comments for next rule
         trainingDataFilePath = 'C:/Users/Vincent.Livant/source/repos/CommentBinning/CommentBinning/CAFECommentsHuman.xlsx'
 

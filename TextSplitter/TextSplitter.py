@@ -1,8 +1,20 @@
-from semantic_text_splitter import TextSplitter
+from semantic_text_splitter import TextSplitter, CodeSplitter
+from tokenizers import Tokenizer
+import tree_sitter_python
 from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 import numpy as np
+
+def tikToken_split(docstring, max_tokens = 1000):
+    splitter = CodeSplitter.from_tiktoken_model(tree_sitter_python.language(), "gpt-3.5-turbo", max_tokens)
+    return splitter.chunks(docstring)
+
+def hugging_split(docstring, max_tokens = 1000):
+    max_tokens = 1000
+    tokenizer = Tokenizer.from_pretrained("bert-base-uncased")
+    splitter = CodeSplitter.from_huggingface_tokenizer(tree_sitter_python.language(), tokenizer, max_tokens)
+    return splitter.chunks(docstring)
 
 def splitDocument(doctring, min_characters = 100, max_characters = 250):
     '''

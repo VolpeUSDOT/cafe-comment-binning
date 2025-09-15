@@ -3,18 +3,47 @@ import pdfplumber
 import fitz
 import shutil
 import pytesseract
+import re
 
 from collections import Counter
 from pdf2image import convert_from_path
 from File_Parsing.ImageParser import get_img_text
 
+def get_greater_mode(data):
+    '''
+    If the second most common element of the data is of greater value than the most common, returns the second most
+    common element; ELSE returns the most common element.
+
+    data: a list of integer elements to find the mode of.
+    '''
+    counter = Counter(data)
+    mode1 = max(data, key = counter.get)
+
+    data1 = list(filter(lambda elem: elem != mode1, data))
+    counter = Counter(data)
+    mode2 = max(data1, key = counter.get)
+
+    return max(mode1, mode2)
+
 def get_body_char_height(page):
     char_heights = []
+    line_heights = []
+    prev_char_y = 1000
     for char in page.chars:
+        # Skip whitespace and bolds to exclude heading text.
+        isWhitespace = char['text'] == ' '
+        isBold = re.search("bold", char['fontname'].lower()) != None
+        if isWhitespace or isBold: continue
+            
         char_heights.append(char['height'])
+        if char['y0'] < prev_char_y:
+            line_heights.append(prev_char_y - char['y0'])
+            prev_char_y = char['y0']
 
-    data = Counter(char_heights)
-    return max(char_heights, key=data.get)
+    char_height_mode = get_greater_mode(char_heights)
+    line_height_mode = get_greater_mode(line_heights)
+
+    return char_height_mode, line_height_mode
 
 def get_footers_bounds(page, body_char_height):
     first_char = page.chars[0]
@@ -78,17 +107,18 @@ def get_pdf_text(file_path, try_ocr = True):
             return body, footers
         
         # Get body-text line height
-        body_char_height = get_body_char_height(pdf.pages[0])
+        body_char_mode, line_height_mode = get_body_char_height(pdf.pages[0])
 
         for page in pdf.pages:
-            footer_bbox = get_footers_bounds(page, body_char_height)
+            footer_bbox = get_footers_bounds(page, body_char_mode)
             if footer_bbox != None:
                 footer_chars = page.crop(footer_bbox).chars
                 text = "".join(f"{char['text']}" for char in footer_chars)
                 footers += text + '\n'
 
                 body_chars = page.outside_bbox(footer_bbox).chars
-                text = "".join(f"{char['text']}" for char in body_chars)
+                # Filter chars by size to remove artifacts (and superscripts)
+                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode]}" for char in body_chars)
                 body += text + '\n'
             else:
                 text = "".join(f"{char['text']}" for char in page.chars)
