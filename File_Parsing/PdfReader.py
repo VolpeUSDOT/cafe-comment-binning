@@ -18,10 +18,12 @@ def get_greater_mode(data):
     '''
     counter = Counter(data)
     mode1 = max(data, key = counter.get)
-
+    mode2 = -1
+    
     data1 = list(filter(lambda elem: elem != mode1, data))
-    counter = Counter(data)
-    mode2 = max(data1, key = counter.get)
+    if (len(data1) > 0):
+        counter = Counter(data)
+        mode2 = max(data1, key = counter.get)
 
     return max(mode1, mode2)
 
@@ -38,7 +40,7 @@ def get_body_char_height(page):
         if isWhitespace or isBold: continue
             
         char_heights.append(char['height'])
-        if char['y0'] < prev_char_y:
+        if (prev_char_y - char['y0'] - .1) > 0:
             line_heights.append(prev_char_y - char['y0'])
         prev_char_y = char['y0']
 
@@ -111,6 +113,9 @@ def get_pdf_text(file_path, try_ocr = True):
         
         # Get body-text line height
         body_char_mode, line_height_mode, left_rule = get_body_char_height(pdf.pages[0])
+        # Paragraph breaks usually take the form of 1.5 a line,
+        # but *1.4 leaves room for tolerance due to font changes
+        para_break_height = line_height_mode * 1.4
 
         for page in pdf.pages:
             footer_bbox = get_footers_bounds(page, body_char_mode)
@@ -127,7 +132,10 @@ def get_pdf_text(file_path, try_ocr = True):
             para_indexes = [ ]
             # Split strings by paragraph
             for i, char in enumerate(body_chars):
-                if prev_char['y0'] - char['y0'] > line_height_mode:
+                # Allow .2 tolerance for bold fonts, else .1
+                tolerance = .2 if re.search("bold", char['fontname'].lower()) != None else .1 
+                line_height = prev_char['y0'] - char['y0']# + tolerance
+                if  line_height > para_break_height: 
                     para_indexes.append((start_index, i - 1))
                     start_index = i
                 prev_char = char
@@ -151,7 +159,8 @@ def get_pdf_text(file_path, try_ocr = True):
                     else:
                         paragraphs.append(text)
                 body += text + ' '
-    return body, footers
+                
+    return paragraphs, footers
 
 def get_pdf_text_ocr(file_path):
     '''

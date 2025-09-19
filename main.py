@@ -9,6 +9,11 @@ from KeywordClassify import keywordClassify
 from TextSplitter.TextSplitter import *
 from File_Parsing.FileTextRetriever import get_text
 
+class SplitMethods:
+    CUSTOM = 'custom'
+    TIKTOKEN = 'tiktoken'
+    HUGGING = 'hugging'
+
 def trainModelAllData(filepath, chunks):
     df = pullDataFromExcel(filepath, train_to_test_ratio=1.00, printouts=False)
 
@@ -50,7 +55,7 @@ def trainModelAllData(filepath, chunks):
 
     return clf, X_test
 
-def concatenateComments(chunk_list, predictions):
+def concatenateComments(chunk_list, predictions, footers = ''):
     concat_comment_list = []
     current_bin = predictions[0]
     current_comment = ""
@@ -65,6 +70,7 @@ def concatenateComments(chunk_list, predictions):
 
     # Add the last row 
     concat_comment_list.append({'Comment': " ".join(chunk_list[start_index:]), 'Bin': current_bin})
+    concat_comment_list.append({'Comment': footers, 'Bin': 'Footers'})
     concat_comment_df = pd.DataFrame(concat_comment_list)
     return (concat_comment_df)
 
@@ -114,7 +120,7 @@ def combinePredictions(keywordClassification, nnPrediction, chunk_list, requireI
 
 def getUniqueFileOutput(outputPath, filePath):
     '''
-
+    Appends a numeric suffix to create a unique filename if one already exists.
     '''
     suffix = 0
     output_file = f'{outputPath}/binned_{Path(filePath).stem}_{suffix}.xlsx'
@@ -127,25 +133,44 @@ def getUniqueFileOutput(outputPath, filePath):
 
 if __name__ == "__main__":
 
-    # USER: Set directory containing files to bin here.
+    # USER: Set output path and directory containing files to bin here.
     dataPath = './Sample_Comments/'
+    outputPath = './BinnedComments' 
 
     fileNames = glob.glob(f"{dataPath}*.*") # Currently only reading text files using "*txt" suffix
-
-    outputPath = './BinnedComments' # Output file location
+    
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
 
+    failed_files = [ ]
+    body = [ ]
+    footers = ''
     for (filePath) in fileNames:
         _, file_extension = os.path.splitext(filePath)
-        #if file_extension == '.pdf': continue # pdf parsing currently unimplemented.
 
         data = get_text(filePath)
-
-        # Chunk file into comments... Issue open to refactor this.
-        #chunk_list = splitDocument(data, min_characters=200, max_characters=350)
-        chunk_list = tikToken_split(data, 250)
-        #chunk_list = hugging_split(data)
+        if type(data) is not str:
+            body = data[0]
+            footers = data[1]
+        else:
+            body = data
+            footers = ''
+        
+        # PDFs are already split by paragraph.
+        temp = type(body)
+        if type(body) is not str:
+            chunk_list = body
+        else:
+            # USER: Select comment splitting method here.
+            method = SplitMethods.TIKTOKEN
+                
+            match method:
+                case SplitMethods.CUSTOM:
+                    chunk_list = splitDocument(body, min_characters=200, max_characters=800)
+                case SplitMethods.TIKTOKEN:
+                    chunk_list = tikToken_split(body, 250)
+                case SplitMethods.HUGGING:
+                    chunk_list = hugging_split(data)
 
         # Path to training data... may need to update with new "graded" comments for next rule
         trainingDataFilePath = 'C:/Users/Vincent.Livant/source/repos/CommentBinning/CommentBinning/CAFECommentsHuman.xlsx'
@@ -161,11 +186,11 @@ if __name__ == "__main__":
         # Combine + IF intervention=true -> manually adjust 
         combinedPredictions = combinePredictions(keywordClassification, pred, chunk_list, requireIntervention=False)
 
-        concat_comment_df = concatenateComments(chunk_list=chunk_list, predictions=combinedPredictions)
+        concat_comment_df = concatenateComments(chunk_list=chunk_list, predictions=combinedPredictions, footers = footers)
 
         # Handle duplicates by appending number suffix to output file name
         file_exists = os.path.exists(f'{outputPath}/binned_{Path(filePath).stem}.xlsx')
         output_file = f'{outputPath}/binned_{Path(filePath).stem}.xlsx' if not file_exists else getUniqueFileOutput(outputPath, filePath)
-        
+
         # Output file
         concat_comment_df.to_excel(output_file)

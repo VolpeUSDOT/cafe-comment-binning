@@ -15,7 +15,7 @@ def get_text(file_path):
         case '.bmp' | '.jfif' | '.jpg' | '.jpeg' | '.png' | '.tif' |'.tiff':
             return get_img_text(file_path)
         case '.pdf':
-            body, footers = get_pdf_text(file_path)
+            body = get_pdf_text(file_path)
             return body
         case '.txt':
             with open(file_path, 'r') as file:
