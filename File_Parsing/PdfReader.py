@@ -32,7 +32,9 @@ def get_body_char_height(page):
     line_heights = []
     prev_char_y = 1000
     left_rule = 1000
+
     for char in page.chars:
+        text += char['text']
         left_rule = min(left_rule, char['x0'])
         # Skip whitespace and bolds to exclude heading text.
         isWhitespace = char['text'] == ' '
@@ -138,11 +140,15 @@ def get_pdf_text(file_path, try_ocr = True):
                 if  line_height > para_break_height: 
                     para_indexes.append((start_index, i - 1))
                     start_index = i
-                prev_char = char
+                # skip whitespace characters since some pdfs use them, while others just change coords on page
+                prev_char = prev_char if char['text'].isspace() else char
+
 
             # Filter chars by size to remove artifacts (and superscripts)
             for i, (start, end) in enumerate(para_indexes):
-                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode]}" for char in body_chars[start:end]).strip()
+                # Need to allow small size tolerance because PDFs are great
+                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode - .1]}"
+                                for char in body_chars[start:end]).strip()
                 
                 # Remove page number
                 end = 0
