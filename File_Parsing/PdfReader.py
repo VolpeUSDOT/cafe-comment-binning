@@ -9,6 +9,84 @@ from collections import Counter
 from pdf2image import convert_from_path
 from File_Parsing.ImageParser import get_img_text
 
+def get_text_by_mcid(page):
+    mcid_dict = { }
+
+    for char in page.chars:
+        mcid_dict[char['mcid']] = mcid_dict.setdefault(char['mcid'], "") + char['text']
+
+    mcid_dict = {key: value for key, value in mcid_dict.items() if len(value.strip()) > 0}
+
+    return list(mcid_dict.values())
+
+def get_text_by_coords(page, paragraphs):
+    footers = ""
+
+    body_char_mode, line_height_mode, left_rule = get_page_dimensional_info(page)
+
+    # Paragraph breaks usually take the form of 1.5 a line,
+    # but *1.4 leaves room for tolerance due to font changes
+    para_break_height = line_height_mode * 1.4
+
+    footer_bbox = get_footers_bounds(page, body_char_mode)
+    if footer_bbox != None:
+        footer_chars = page.crop(footer_bbox).chars
+        footers += "".join(f"{char['text']}" for char in footer_chars) + '\n'
+
+        body_chars = page.outside_bbox(footer_bbox).chars
+    else:
+        body_chars = page.chars
+
+    prev_char = body_chars[0]
+    start_index = 0
+    para_indexes = [ ]
+    # Split strings by paragraph
+    for i, char in enumerate(body_chars):
+        # Allow .2 tolerance for bold fonts, else .1
+        tolerance = .2 if re.search("bold", char['fontname'].lower()) != None else .1 
+        line_height = prev_char['y0'] - char['y0'] + tolerance
+        if  line_height > para_break_height: 
+            para_indexes.append((start_index, i - 1))
+            start_index = i
+        # skip whitespace characters since some pdfs use them, while others just change coords on page
+        prev_char = prev_char if char['text'].isspace() else char
+
+    # Filter chars by size to remove artifacts (and superscripts)
+    for i, (start, end) in enumerate(para_indexes):
+        # Need to allow small size tolerance because PDFs are great
+        text = "".join(f"{['', char['text']][char['size'] >= body_char_mode - .1]}"
+                        for char in body_chars[start:end]).strip()
+        
+        # Remove page number
+        end = 0
+        regex = re.compile("^\d+ ")
+        if regex.match("".join(text[0:4])):
+            end = [m.end(0) for m in re.finditer(regex, text[0:4])][0]
+            text = text[end:]
+        
+        if len(text) > 0:
+            # Join paragraphs continued between pages
+            is_left_rule_aligned = abs(body_chars[end]['x0'] - left_rule) < 0.1 # Allow .1 tolerance
+            if (len(paragraphs) > 0) & (i == 0) & is_left_rule_aligned:
+                paragraphs[-1] = paragraphs[-1] + ' ' + text
+            else:
+                paragraphs.append(text)
+
+    return paragraphs
+
+def get_unique_paragraphs(paragraphs):
+    unique_paragraphs = []
+
+    # MCID method often picks up footers
+    # #so attempt to strip random space differences and numbers to identify them as non-uniuq
+    stripped = [''.join([i for i in item if not i.isdigit() or i.isspace()]) for item in paragraphs]
+
+    for i, val in enumerate(paragraphs):
+        if stripped.count(val) == 1:
+            unique_paragraphs.append(paragraphs[i])
+
+    return unique_paragraphs
+
 def get_greater_mode(data):
     '''
     If the second most common element of the data is of greater value than the most common, returns the second most
@@ -27,14 +105,13 @@ def get_greater_mode(data):
 
     return max(mode1, mode2)
 
-def get_body_char_height(page):
+def get_page_dimensional_info(page):
     char_heights = []
     line_heights = []
     prev_char_y = 1000
     left_rule = 1000
 
     for char in page.chars:
-        text += char['text']
         left_rule = min(left_rule, char['x0'])
         # Skip whitespace and bolds to exclude heading text.
         isWhitespace = char['text'] == ' '
@@ -112,61 +189,19 @@ def get_pdf_text(file_path, try_ocr = True):
         if len(pdf.chars) == 0 & try_ocr:
             body = get_pdf_text_ocr(file_path)
             return body, footers
-        
-        # Get body-text line height
-        body_char_mode, line_height_mode, left_rule = get_body_char_height(pdf.pages[0])
-        # Paragraph breaks usually take the form of 1.5 a line,
-        # but *1.4 leaves room for tolerance due to font changes
-        para_break_height = line_height_mode * 1.4
 
         for page in pdf.pages:
-            footer_bbox = get_footers_bounds(page, body_char_mode)
-            if footer_bbox != None:
-                footer_chars = page.crop(footer_bbox).chars
-                footers += "".join(f"{char['text']}" for char in footer_chars) + '\n'
-
-                body_chars = page.outside_bbox(footer_bbox).chars
+            chars = page.chars
+            if any(char['mcid'] != None for char in chars):
+                paragraphs.extend(get_text_by_mcid(page))
             else:
-                body_chars = page.chars
+                paragraphs = get_text_by_coords(page, paragraphs)
 
-            prev_char = body_chars[0]
-            start_index = 0
-            para_indexes = [ ]
-            # Split strings by paragraph
-            for i, char in enumerate(body_chars):
-                # Allow .2 tolerance for bold fonts, else .1
-                tolerance = .2 if re.search("bold", char['fontname'].lower()) != None else .1 
-                line_height = prev_char['y0'] - char['y0']# + tolerance
-                if  line_height > para_break_height: 
-                    para_indexes.append((start_index, i - 1))
-                    start_index = i
-                # skip whitespace characters since some pdfs use them, while others just change coords on page
-                prev_char = prev_char if char['text'].isspace() else char
+        # Remove all duplicates since those are almost certainly heading/footing
+        unique_paragraphs = get_unique_paragraphs(paragraphs)
+        unique_footers = get_unique_paragraphs(footers)
 
-
-            # Filter chars by size to remove artifacts (and superscripts)
-            for i, (start, end) in enumerate(para_indexes):
-                # Need to allow small size tolerance because PDFs are great
-                text = "".join(f"{['', char['text']][char['size'] >= body_char_mode - .1]}"
-                                for char in body_chars[start:end]).strip()
-                
-                # Remove page number
-                end = 0
-                regex = re.compile("^\d+ ")
-                if regex.match("".join(text[0:4])):
-                    end = [m.end(0) for m in re.finditer(regex, text[0:4])][0]
-                    text = text[end:]
-                
-                if len(text) > 0:
-                    # Join paragraphs continued between pages
-                    is_left_rule_aligned = abs(body_chars[end]['x0'] - left_rule) < 0.1 # Allow .1 tolerance
-                    if (len(paragraphs) > 0) & (i == 0) & is_left_rule_aligned:
-                        paragraphs[-1] = paragraphs[-1] + ' ' + text
-                    else:
-                        paragraphs.append(text)
-                body += text + ' '
-                
-    return paragraphs, footers
+    return unique_paragraphs, unique_footers
 
 def get_pdf_text_ocr(file_path):
     '''
