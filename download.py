@@ -13,7 +13,7 @@ from datetime import datetime
 # region /------ User Values ------/
 
 # Set personal API key with which to make requests. One can be obtained at https://open.gsa.gov/api/regulationsgov
-api_key = "mb9QFdMuWnHBebkYicehel4pq6vuld2112wIi5CD"
+api_key = "place_holder"
 
 # Set target docket using ID, visible in "Document Details" -> "Agency/Docket Number"
 # A new folder is created for each docket ID to prevent data loss between multiple runs.
