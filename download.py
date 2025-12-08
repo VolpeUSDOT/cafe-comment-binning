@@ -24,7 +24,15 @@ BASE_DIR = "C://Users//Vincent.Livant//Desktop//CommentBinning//test/"
 
 # The name of the file used to save pulled comment info. 
 # This file is used to determine the last comments pulled and resume progress.
-SAVED_WORK_FILE = BASE_DIR + docket_id + "/log.csv"
+# The file must be in the ".csv" format.
+LOG_FILE = BASE_DIR + docket_id + "/log" + ".csv"
+
+# regulations.gov checks for and blocks requests for attachments from "bots." This value should work, but
+# if getting 403 errors when requesting attachments find your browser user-agent by opening the console in your browser 
+# development tools and typing "navigator.userAgent."
+user_agent = {
+       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    }
 
 # endregion /-------------------------/
 
@@ -48,7 +56,9 @@ get_docket_comments_lastModified_string = "https://api.regulations.gov/v4/commen
 get_docs_base_string = "https://api.regulations.gov/v4/documents?sort=lastModifiedDate&filter[docketId]={}&api_key={}"
 get_document_comments_base_string = "https://api.regulations.gov/v4/comments?sort=lastModifiedDate&filter[commentOnId]={}&include=attachments&page[size]=250&page[number]={}&api_key={}"
 
+
 headers = ["entryType", "modifyDate", "docketId", "commentOnDocumentId", "id", "organization", "firstName", "lastName", "title", "comment", "attachments", "url"]
+
 
 # endregion /------------------------/
 
@@ -58,9 +68,6 @@ headers = ["entryType", "modifyDate", "docketId", "commentOnDocumentId", "id", "
 def get_docket_documents(docket_id):
     '''
     docket_id: The docket for which to pull documents.
-    log: The output file location for file used to saved details and tracking progress.
-    last_dateModified: The date modified of the last pulled entry. Documents will be pulled for entries later than or
-                       equal to this given time. If value is None all documents will be pulled.
 
     returns: a list of document IDs and their URL links for all documents associated with the given docket ID.
     '''    
@@ -68,13 +75,13 @@ def get_docket_documents(docket_id):
 
     # Grab all docs associated with docket
     request_str = get_docs_base_string.format(docket_id, api_key)
-    request = json.loads(requests.get(request_str).text)
+    response = json.loads(requests.get(request_str).text)
 
-    if ("error" in request) and (request["error"]["code"] == "OVER_RATE_LIMIT"):
+    if ("error" in response) and (response["error"]["code"] == "OVER_RATE_LIMIT"):
         delay_for_rate_limit()
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
 
-    data = request["data"]
+    data = response["data"]
     ids = []
     links = []
 
@@ -87,7 +94,7 @@ def get_docket_documents(docket_id):
 def get_docket_comments(docket_id, log, last_dateModified):
     '''
     docket_id: The docket for which to pull comments.
-    log: The output file location for file used to saved details and tracking progress.
+    log: The data frame associated with the log file specified in User Values.
     last_dateModified: The date modified of the last pulled entry. Comments will be pulled for entries later than or
                        equal to this given time. If value is None all comments will be pulled.
 
@@ -104,31 +111,36 @@ def get_docket_comments(docket_id, log, last_dateModified):
         print("Checking for all comments...\n")
         request_str = get_docket_comments_base_string.format(docket_id, '1', api_key)
 
-    request = json.loads(requests.get(request_str).text)
+    response = json.loads(requests.get(request_str).text)
     
-    if ("error" in request) and (request["error"]["code"] == "OVER_RATE_LIMIT"):
+    if ("error" in response) and (response["error"]["code"] == "OVER_RATE_LIMIT"):
         delay_for_rate_limit()
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
     
-    num_pages = request["meta"]["totalPages"]
+    num_pages = response["meta"]["totalPages"]
 
-    append_docket_request_comments(request, comment_ids, comment_urls, log)
+    append_docket_request_comments(response, comment_ids, comment_urls, log)
     
     for page_num in range(2, num_pages):
         request_str = get_docket_comments_base_string.format(docket_id, page_num, api_key)
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
 
-        append_docket_request_comments(request, comment_ids, comment_urls)
+        append_docket_request_comments(response, comment_ids, comment_urls)
        
     print(f"{len(comment_ids)} new comments found!\n")
 
     return comment_ids, comment_urls
 
-def append_docket_request_comments(request, comment_ids, comment_urls, log):
+def append_docket_request_comments(response, comment_ids, comment_urls, log):
     '''
-    Appends all comments not previously logged to queue list.
+    response: The value returned from an API request for comments associated with a docket.
+    comment_ids: The list of comment IDs for which to append new comments, used for the download queue.
+    comment_urls: The list of comment URLs for which to append new comments, used for the download queue.
+    log: The data frame associated with the log file specified in User Values.
+
+    Appends all comment IDs and URLs not previously logged to queue list.
     '''
-    data = request["data"]
+    data = response["data"]
     for comment in data:
         if comment["id"] not in log['id']:
             comment_ids.append(comment["id"])
@@ -140,6 +152,14 @@ def append_docket_request_comments(request, comment_ids, comment_urls, log):
 #region Document-Level Methods
 
 def get_all_documents_comments(document_ids, log, last_dateModified):
+    '''
+    document_ids: A list of document IDs for which to pull comments.
+    log: The data frame associated with the log file specified in User Values.
+    last_dateModified: The date modified of the last pulled entry. Comments will be pulled for entries later than or
+                       equal to this given time. If value is None all comments will be pulled.
+
+    returns: a list of comment IDs and their URL links for all comments associated with the given document IDs.
+    '''   
     document_comment_ids = []
     document_comment_urls = []
 
@@ -152,8 +172,13 @@ def get_all_documents_comments(document_ids, log, last_dateModified):
 
 def get_document_comments(document_id, log, last_dateModified):
     '''
-    returns: a list of comments associated with the docket being processed.
-    '''
+    document_id: The document ID for which to pull comments.
+    log: The data frame associated with the log file specified in User Values.
+    last_dateModified: The date modified of the last pulled entry. Comments will be pulled for entries later than or
+                       equal to this given time. If value is None all comments will be pulled.
+
+    returns: a list of comment IDs and their URL links for the given document and adds them to the queue.
+    '''   
     comment_ids = []
     comment_urls = []
 
@@ -166,30 +191,39 @@ def get_document_comments(document_id, log, last_dateModified):
 
     # First request gets page count
     request_str = get_document_comments_base_string.format(document_id, 1, api_key)
-    request = json.loads(requests.get(request_str).text)
+    response = json.loads(requests.get(request_str).text)
 
-    if ("error" in request) and (request["error"]["code"] == "OVER_RATE_LIMIT"):
+    if ("error" in response) and (response["error"]["code"] == "OVER_RATE_LIMIT"):
         delay_for_rate_limit()
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
 
-    append_document_request_comments(request, comment_ids, comment_urls)
+    append_document_request_comments(response, comment_ids, comment_urls, log)
 
-    num_pages = request["meta"]["totalPages"]
+    num_pages = response["meta"]["totalPages"]
     for page in range(2, num_pages):
         request_str = get_document_comments_base_string.format(document_id, page, api_key)
-        request = json.loads(requests.get(request_str).text)
-        append_document_request_comments(request, comment_ids, comment_urls)
+        response = json.loads(requests.get(request_str).text)
+        append_document_request_comments(response, comment_ids, comment_urls, log)
 
     print(f"{len(comment_ids)} new comments found!\n")
 
     return comment_ids, comment_urls
 
-def append_document_request_comments(request, comment_ids, comment_urls):
-    if len(request["data"]) == 0:
+def append_document_request_comments(response, comment_ids, comment_urls, log):
+    '''
+    response: The value returned from an API request for comments associated with a document.
+    comment_ids: The list of comment IDs for which to append new comments, used for the download queue.
+    comment_urls: The list of comment URLs for which to append new comments, used for the download queue.
+    log: The data frame associated with the log file specified in User Values.
+
+    Description: Appends all comment IDs and URLs not previously logged to download queue.
+    '''
+    if len(response["data"]) == 0:
         return 
-    for comment in request["data"]:
-        comment_ids.append(comment["id"])
-        comment_urls.append(comment["links"]["self"])
+    for comment in response["data"]:
+        if comment["id"] not in log['id']:
+            comment_ids.append(comment["id"])
+            comment_urls.append(comment["links"]["self"])
     return
 
 #endregion
@@ -197,28 +231,49 @@ def append_document_request_comments(request, comment_ids, comment_urls):
 #region Content-Level Methods
 
 def get_all_details(item_ids, urls, dir_path, log, are_comments):
+    '''
+    item_ids: A list of item IDs for which to download all attachments and comment text of, then log.
+    urls: The URLs associated with each item_id, used to make API requests.
+    dir_path: The path in which to save all downloaded content.
+    log: The data frame associated with the log file specified in User Values.
+    are_comments: Whether or not the items being processed are comments.
+
+    returns: The given log file, updated with each successfully processed item.
+
+    Description: Acquires and saves the details, attachments and entry comment text for each of the given item IDs and 
+    URLs to the given directory. Each entry is logged after successful parsing.
+    '''
     progress_substring = "comments" if are_comments else "documents"
     for i in range(len(item_ids)):
         details = get_details(item_ids[i], urls[i], dir_path, are_comments)
         log = pd.concat([log, details])
         save_work(log)
-        if i%50 == 0:
+        if i%10 == 0:
             print(f"{len(item_ids) - i} {progress_substring} remaining.")
 
     return log
 
 def get_details(item_id, url, dir_path, is_comment):
+    '''
+    item_id: The item ID for which to download all attachments and comment text of, then log.
+    urls: The URL associated with the given item_id, used to make API requests.
+    dir_path: The path in which to save all downloaded content.
+    log: The data frame associated with the log file specified in User Values.
+    is_comments: Whether or not the item being processed is a comment.
+
+    Description: Acquires and logs all details for the given entry and associated URL, downloading all attachments and 
+    saving comment text to a new folder, named after he item ID, in the given directory.
+    '''
     request_str = url + "?api_key=" + api_key
-    request = json.loads(requests.get(request_str).text)
+    response = json.loads(requests.get(request_str).text)
 
-    # TODO:
-    if ("error" in request) and (request["error"]["code"] == "OVER_RATE_LIMIT"):
+    if ("error" in response) and (response["error"]["code"] == "OVER_RATE_LIMIT"):
         delay_for_rate_limit()
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
 
-    entry_dir = create_dir_for_entry(dir_path, item_id)
+    entry_dir = create_dir_for_entry(item_id)
 
-    attributes = request["data"]["attributes"]
+    attributes = response["data"]["attributes"]
     df = pd.DataFrame(columns = headers)
 
     df.at[0, 'entryType'] = 'comment' if is_comment else 'document'
@@ -241,26 +296,32 @@ def get_details(item_id, url, dir_path, is_comment):
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(comment)
 
-    if not os.path.isdir(entry_dir):
-        os.mkdir(dir_path)
-
     attachments = download_attachments(url, entry_dir)
 
     df.at[0, 'attachments'] = attachments
     
+    # Delete directory if empty
+    if len(os.listdir(entry_dir)) == 0:
+        os.remove(entry_dir)
+
     return df
 
 def download_attachments(entry_url, dir_path):
+    '''
+    entry_url: The URL associated with a comment, for which to download all attachments.
+    dir_path: The directory in which to saved the attachments.
+
+    Description: Saves all attachments associated with the given URL in the specified directory.
+    '''
     attachments = []
     request_str = entry_url + "/attachments?api_key=" + api_key
-    request = json.loads(requests.get(request_str).text)
+    response = json.loads(requests.get(request_str).text)
 
-    # TODO:
-    if ("error" in request) and (request["error"]["code"] == "OVER_RATE_LIMIT"):
+    if ("error" in response) and (response["error"]["code"] == "OVER_RATE_LIMIT"):
         delay_for_rate_limit()
-        request = json.loads(requests.get(request_str).text)
+        response = json.loads(requests.get(request_str).text)
 
-    data = request["data"]
+    data = response["data"]
     for attachment in data:
         attributes = attachment["attributes"]
         # Need to check if each attachment is restricted, otherwise could get 403 and crash
@@ -276,36 +337,53 @@ def download_attachments(entry_url, dir_path):
     return attachments
 
 def save_attachment(attachment, dir_path):
+    '''
+    attachment: A tuple containing the file name and URL for an attachment to be saved.
+    dir_path: The directory path in which to save the attachment.
+
+    Description: Makes an API request for the given attachment information and saves it to the specified directory.
+    '''
     file_name, url = attachment
     url_req = url + "?api_key=" + api_key
-    file_path = dir_path + file_name
 
-    user_agent = {
-       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
-     }
-
-    request = requests.get(url_req, headers=user_agent, stream=True)
+    response = requests.get(url_req, headers=user_agent, stream=True)
 
     with open(dir_path + file_name, 'wb') as file:
-        file.write(request.content)
+        file.write(response.content)
     return
 
 #endregion
 
 #region Helpers
 
-def save_work(comment_details):
-    file_path = SAVED_WORK_FILE
-    comment_details.to_csv(file_path, index=False)
+def save_work(log):
+    '''
+    log: The data frame associated with the log file specified in User Values.
+
+    Description: Saves processed entries to the log file using the given data frame.
+    '''
+    file_path = LOG_FILE
+    log.to_csv(file_path, index=False)
 
 def get_progress_data():
-    file_path = SAVED_WORK_FILE
+    '''
+    Returns progress data saved in the log file if it exists in the form of a data frame, otherwise returns None.
+
+    Remark: The returned data frame is later used to make API requests filtered such that only comments and documents 
+    last modified after the last logged entry are processed.
+    '''
+    file_path = LOG_FILE
     if os.path.exists(file_path):
         return pd.read_csv(file_path)
     else:
         return None
 
 def delay_for_rate_limit():
+    '''
+    If runtime setting "wait_for_rate_limit" is set to:
+        True: delays comment pulling for one hour when API request limit is reset.
+        False: terminates comment pulling and exits gracefully.
+    '''
     if wait_for_rate_limit:
         print("[" + str(datetime.datetime.now()) + "] Hourly API request limit reached. Progress will resume in ~1 hour...")
         time.sleep(3660)
@@ -315,11 +393,11 @@ def delay_for_rate_limit():
         print("[" + str(datetime.datetime.now()) + "] Hourly API request limit reached. Progress is saved.  Exiting...")
         exit()
 
-def create_dir_for_entry(base_path, entry_id):
+def create_dir_for_entry(entry_id):
     '''
     Creates a new directory for a given entry ID if it doesn't already exist.
     '''
-    dir_path = base_path + entry_id + '/'
+    dir_path = BASE_DIR + docket_id + '/' + entry_id + '/'
 
     if not os.path.isdir(dir_path):
         os.mkdir(dir_path)
@@ -328,8 +406,8 @@ def create_dir_for_entry(base_path, entry_id):
 
 def get_unique_file_name_from_url(url, dir_path):
     '''
-    Returns the file name embedded in the given url with invalid characters removed, and trimmed to Windows file name 
-    limit.
+    Returns the file name embedded in the given url, applying numbered suffixes if the name already exists in the given 
+    directory.
     '''
     suffix = 0
 
@@ -348,22 +426,24 @@ def get_most_recent_modified(log):
 #endregion
 
 if __name__ == "__main__":
-    docket_dir = create_dir_for_entry(BASE_DIR, docket_id)
+    docket_dir = BASE_DIR + docket_id
 
     # Load data-frame from previous runs if exits, or create a new one.
     # Then pass it to details-getters and check last date-modified and adjust requests accordingly
-    log = get_progress_data() if os.path.exists(SAVED_WORK_FILE) else pd.DataFrame(columns = headers)
+    log = get_progress_data() if os.path.exists(LOG_FILE) else pd.DataFrame(columns = headers)
     last_dateModified = get_most_recent_modified(log)
     
     print(f"{log.shape[0]} previous entries pulled. Checking for new comments...")
 
-    docket_comment_dir = docket_dir # + "/comments/"
-    if not os.path.isdir(docket_comment_dir):
-        os.mkdir(docket_comment_dir)
+    # Setup directory
+    if not os.path.isdir(docket_dir):
+        os.mkdir(docket_dir)
 
+    # Pull comments
     comment_ids, comment_urls = get_docket_comments(docket_id, log, last_dateModified)
-    log = get_all_details(comment_ids, comment_urls, docket_comment_dir, log, True)
+    log = get_all_details(comment_ids, comment_urls, docket_dir, log, True)
     
+    # Setup directory and pull documents if setting is set to True
     if pull_document_comments:
         docket_document_dir = docket_dir + "/documents/"
         if not os.path.isdir(docket_document_dir):
