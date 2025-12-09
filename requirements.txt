@@ -14,3 +14,7 @@ PyMuPDF
 pdf2image
 pytesseract
 pdfplumber
+json
+html
+requests
+shutil
