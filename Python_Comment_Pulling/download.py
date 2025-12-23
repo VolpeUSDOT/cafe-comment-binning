@@ -47,6 +47,9 @@ wait_for_rate_limit = True
 # If False: docket documents will be ignored.
 pull_document_comments = False
 
+# If True: attachments associated with comments will be downloaded.
+# If False: no attachments will be downloaded.
+pull_attachments = False
 # endregion /-----------------------/
 
 # region /------ Constants ------/
@@ -125,7 +128,7 @@ def get_docket_comments(docket_id, log, last_dateModified):
         request_str = get_docket_comments_base_string.format(docket_id, page_num, api_key)
         response = json.loads(requests.get(request_str).text)
 
-        append_docket_request_comments(response, comment_ids, comment_urls)
+        append_docket_request_comments(response, comment_ids, comment_urls, log)
        
     print(f"{len(comment_ids)} new comments found!\n")
 
@@ -296,7 +299,8 @@ def get_details(item_id, url, dir_path, is_comment):
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(comment)
 
-    attachments = download_attachments(url, entry_dir)
+    if download_attachments:
+        attachments = download_attachments(url, entry_dir)
 
     df.at[0, 'attachments'] = attachments
     
