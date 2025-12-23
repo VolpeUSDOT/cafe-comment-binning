@@ -72,7 +72,7 @@ def combinePredictions(keywordClassification, nnPrediction, chunk_list, requireI
     '''
     Compare the classification of keywords and NN prediction.
 
-    If require_intervention is False: keyword classification overrrides nnPrediction
+    If require_intervention is False: keyword classification overrides nnPrediction
 
     If require_intervention is True: terminal input will be required whenever keywordClassification does not match nnPrediction
     '''
@@ -113,9 +113,6 @@ def combinePredictions(keywordClassification, nnPrediction, chunk_list, requireI
     return combinedPredictions
 
 def getUniqueFileOutput(outputPath, filePath):
-    '''
-
-    '''
     suffix = 0
     output_file = f'{outputPath}/binned_{Path(filePath).stem}_{suffix}.xlsx'
 
@@ -128,15 +125,15 @@ def getUniqueFileOutput(outputPath, filePath):
 if __name__ == "__main__":
 
     # USER: Set directory containing files to bin here.
-    dataPath = './Sample_Comments/'
+    base_dir =  "PLACE_HOLDER"
 
-    fileNames = glob.glob(f"{dataPath}*.*") # Currently only reading text files using "*txt" suffix
+    file_paths = [os.path.join(base_dir,f) for (base_dir, dirnames, filenames) in os.walk(base_dir) for f in filenames] 
 
     outputPath = './BinnedComments' # Output file location
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
 
-    for (filePath) in fileNames:
+    for (filePath) in file_paths:
         _, file_extension = os.path.splitext(filePath)
         #if file_extension == '.pdf': continue # pdf parsing currently unimplemented.
 

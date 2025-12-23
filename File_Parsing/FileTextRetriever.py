@@ -18,7 +18,7 @@ def get_text(file_path):
             body, footers = get_pdf_text(file_path)
             return body
         case '.txt':
-            with open(file_path, 'r') as file:
+            with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read()
     return None
 
