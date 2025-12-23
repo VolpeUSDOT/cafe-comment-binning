@@ -47,6 +47,9 @@ wait_for_rate_limit = True
 # If False: docket documents will be ignored.
 pull_document_comments = False
 
+# If True: attachments associated with comments will be downloaded.
+# If False: no attachments will be downloaded.
+pull_attachments = False
 # endregion /-----------------------/
 
 # region /------ Constants ------/
@@ -296,7 +299,8 @@ def get_details(item_id, url, dir_path, is_comment):
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(comment)
 
-    attachments = download_attachments(url, entry_dir)
+    if download_attachments:
+        attachments = download_attachments(url, entry_dir)
 
     df.at[0, 'attachments'] = attachments
     
