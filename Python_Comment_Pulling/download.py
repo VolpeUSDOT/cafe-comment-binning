@@ -128,7 +128,7 @@ def get_docket_comments(docket_id, log, last_dateModified):
         request_str = get_docket_comments_base_string.format(docket_id, page_num, api_key)
         response = json.loads(requests.get(request_str).text)
 
-        append_docket_request_comments(response, comment_ids, comment_urls)
+        append_docket_request_comments(response, comment_ids, comment_urls, log)
        
     print(f"{len(comment_ids)} new comments found!\n")
 
